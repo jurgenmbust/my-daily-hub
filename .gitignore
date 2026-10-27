@@ -1,0 +1,10 @@
+.env
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+backups/
+.tools/
+.local-keys/
+**/*.tsbuildinfo
+**/TestResults/

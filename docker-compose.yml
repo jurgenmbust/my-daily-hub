@@ -1,0 +1,73 @@
+name: my-daily-hub
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dailyhub
+      POSTGRES_USER: dailyhub
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      TZ: America/Costa_Rica
+    volumes:
+      - database:/var/lib/postgresql/data
+    networks: [database]
+    mem_limit: 512m
+    cpus: 1.0
+    shm_size: 128m
+    command: [postgres, -c, shared_buffers=128MB, -c, max_connections=30, -c, work_mem=4MB]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U dailyhub -d dailyhub']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: &logs
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  api:
+    image: my-daily-hub-api:local
+    build: {context: ., dockerfile: backend/Dockerfile}
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Database: Host=db;Database=dailyhub;Username=dailyhub;Password=${DB_PASSWORD:?Set DB_PASSWORD};Maximum Pool Size=20
+      Bootstrap__Username: ${ADMIN_USERNAME:-admin}
+      Bootstrap__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+      SecureCookies: ${SECURE_COOKIES:-false}
+      ASPNETCORE_ENVIRONMENT: Production
+      TZ: America/Costa_Rica
+    volumes: [keys:/app/keys]
+    networks: [database, frontend]
+    depends_on:
+      db: {condition: service_healthy}
+    mem_limit: 384m
+    cpus: 1.0
+    read_only: true
+    tmpfs: [/tmp:size=32m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    logging: *logs
+  web:
+    image: my-daily-hub-web:local
+    build: {context: ., dockerfile: frontend/Dockerfile}
+    restart: unless-stopped
+    ports: ['${LAN_IP:-192.168.100.29}:8080:8080']
+    networks: [frontend]
+    depends_on: [api]
+    mem_limit: 64m
+    cpus: 0.5
+    read_only: true
+    tmpfs: [/tmp:size=16m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test: [CMD-SHELL, 'wget -q -O /dev/null http://127.0.0.1:8080/api/health || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging: *logs
+volumes:
+  database:
+  keys:
+networks:
+  database: {internal: true}
+  frontend:
