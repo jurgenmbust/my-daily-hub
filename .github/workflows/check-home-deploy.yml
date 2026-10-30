@@ -1,0 +1,21 @@
+name: Check home deployment setup
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/*home*.yml"
+      - "deploy/home/**"
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate installer, sudo rule and deployment gate
+        run: |
+          bash -n deploy/home/install.sh
+          printf '%s\n' 'hub-runner ALL=(root) NOPASSWD: /usr/local/sbin/my-daily-hub-deploy ""' | sudo visudo -cf -
+          python3 -m unittest discover -s deploy/home/tests -v
