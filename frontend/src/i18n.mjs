@@ -1,4 +1,8 @@
 export const spanish = {
+  Appearance: "Apariencia",
+  "Main navigation": "Navegación principal",
+  Pages: "Páginas",
+  "Account settings": "Configuración de la cuenta",
   Theme: "Tema",
   System: "Sistema",
   Light: "Claro",
