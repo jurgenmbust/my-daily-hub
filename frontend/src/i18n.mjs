@@ -1,4 +1,8 @@
 export const spanish = {
+  Theme: "Tema",
+  System: "Sistema",
+  Light: "Claro",
+  Dark: "Oscuro",
   "Title is required (maximum 200 characters).":
     "El título es obligatorio (máximo 200 caracteres).",
   "Notes or category exceeds its limit.":
