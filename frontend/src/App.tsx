@@ -3,6 +3,13 @@ import { api } from "./api";
 import type { User, Task, RecordDay, Draft } from "./types";
 import { shift, occurs, localDate } from "./schedule.mjs";
 import "./style.css";
+import {
+  initialLanguage,
+  savedLanguage,
+  saveLanguage,
+  translate,
+} from "./i18n.mjs";
+import type { Language } from "./i18n.mjs";
 function monthOffset(date: string, offset: number) {
   const d = new Date(date.slice(0, 7) + "-01T12:00:00Z");
   d.setUTCMonth(d.getUTCMonth() + offset);
@@ -20,6 +27,36 @@ export default function App() {
     [editor, setEditor] = useState<Draft | null>(null),
     [editId, setEditId] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
+  const [language, setLanguage] = useState<Language>(() => initialLanguage());
+  const tr = (key: string, values?: Record<string, string | number>) =>
+    translate(language, key, values);
+  const locale = language === "es" ? "es-CR" : "en-US";
+  useEffect(() => {
+    if (user) setLanguage(savedLanguage(user.username) || initialLanguage());
+  }, [user?.username]);
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+  function chooseLanguage(next: Language) {
+    setLanguage(next);
+    saveLanguage(next, user?.username);
+  }
+  const languagePicker = (
+    <label className="language-picker">
+      {tr("Language")}
+      <select
+        value={language}
+        onChange={(e) => chooseLanguage(e.target.value as Language)}
+      >
+        <option value="es" lang="es">
+          Español
+        </option>
+        <option value="en" lang="en">
+          English
+        </option>
+      </select>
+    </label>
+  );
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 60_000);
@@ -56,6 +93,12 @@ export default function App() {
       setBusy(false);
     }
   }
+  function formatDate(value: string) {
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(new Date(value + "T12:00:00Z"));
+  }
   const record = (t: Task, d: string) =>
     records.find((r) => r.taskId === t.id && r.date === d);
   const scheduled = (d: string) =>
@@ -84,7 +127,7 @@ export default function App() {
         : {
             title: "",
             notes: "",
-            category: "Personal",
+            category: tr("Personal"),
             priority: 1,
             startDate: today,
             dueDate: "",
@@ -113,7 +156,7 @@ export default function App() {
       <article className={"task " + (r?.done ? "done" : "")} key={t.id}>
         <div className="task-main">
           <input
-            aria-label={"Complete " + t.title}
+            aria-label={tr("Complete {title}", { title: t.title })}
             type="checkbox"
             checked={r?.done || false}
             disabled={busy || d > today}
@@ -123,20 +166,24 @@ export default function App() {
             <h3>{t.title}</h3>
             <div className="meta">
               <span className={"priority p" + t.priority}>
-                {["Low", "Medium", "High"][t.priority]}
+                {tr(["Low", "Medium", "High"][t.priority])}
               </span>
               <span>{t.category}</span>
-              <span>{t.recurrence === "none" ? "One time" : t.recurrence}</span>
-              <span>{t.dueDate && `Due ${t.dueDate}`}</span>
+              <span>
+                {tr(t.recurrence === "none" ? "One time" : t.recurrence)}
+              </span>
+              <span>
+                {t.dueDate && tr("Due {date}", { date: formatDate(t.dueDate) })}
+              </span>
             </div>
             {t.notes && <p>{t.notes}</p>}
           </div>
           <button
             className="quiet"
             onClick={() => openEditor(t)}
-            aria-label={"Edit " + t.title}
+            aria-label={tr("Edit {title}", { title: t.title })}
           >
-            Edit
+            {tr("Edit")}
           </button>
         </div>
         {items.length > 0 && (
@@ -171,7 +218,7 @@ export default function App() {
   if (loading)
     return (
       <main className="login">
-        <p>Opening your hub…</p>
+        <p>{tr("Opening your hub…")}</p>
       </main>
     );
   if (!user)
@@ -192,12 +239,13 @@ export default function App() {
             });
           }}
         >
+          {languagePicker}
           <div className="brand-icon">◈</div>
-          <p className="eyebrow">A LITTLE SPACE FOR YOUR DAY</p>
+          <p className="eyebrow">{tr("A LITTLE SPACE FOR YOUR DAY")}</p>
           <h1>My Daily Hub</h1>
-          <p>Make room for what matters.</p>
+          <p>{tr("Make room for what matters.")}</p>
           <label>
-            Username
+            {tr("Username")}
             <input
               name="username"
               autoComplete="username"
@@ -206,7 +254,7 @@ export default function App() {
             />
           </label>
           <label>
-            Password
+            {tr("Password")}
             <input
               name="password"
               type="password"
@@ -217,11 +265,11 @@ export default function App() {
           </label>
           {error && (
             <p role="alert" className="error">
-              {error}
+              {tr(error)}
             </p>
           )}
-          <button disabled={busy}>Sign in →</button>
-          <small>Private by design. Hosted on your network.</small>
+          <button disabled={busy}>{tr("Sign in →")}</button>
+          <small>{tr("Private by design. Hosted on your network.")}</small>
         </form>
       </main>
     );
@@ -237,7 +285,8 @@ export default function App() {
         <a className="brand" href="#" onClick={() => setPage("Today")}>
           <span className="brand-icon">◈</span> My Daily Hub
         </a>
-        <p className="eyebrow">YOUR PERSONAL SPACE</p>
+        <p className="eyebrow">{tr("YOUR PERSONAL SPACE")}</p>
+        {languagePicker}
         <nav>
           {["Today", "All tasks", "Calendar", "Settings"].map((p, i) => (
             <button
@@ -246,24 +295,24 @@ export default function App() {
               onClick={() => setPage(p)}
             >
               <span>{["◉", "☷", "▦", "⚙"][i]}</span>
-              {p}
+              {tr(p)}
             </button>
           ))}
         </nav>
         <div className="sidebar-note">
           <span>
-            Small steps.
+            {tr("Small steps.")}
             <br />
-            Meaningful days.
+            {tr("Meaningful days.")}
           </span>
-          <p>One thing at a time is enough.</p>
+          <p>{tr("One thing at a time is enough.")}</p>
         </div>
         <div className="profile">
           <span className="avatar">{user.username[0].toUpperCase()}</span>
           <div>
             <strong>{user.username}</strong>
             <small>
-              {user.isAdmin ? "Administrator" : "Personal workspace"}
+              {user.isAdmin ? tr("Administrator") : tr("Personal workspace")}
             </small>
           </div>
           <button
@@ -277,7 +326,7 @@ export default function App() {
               })
             }
           >
-            Exit
+            {tr("Exit")}
           </button>
         </div>
       </aside>
@@ -285,7 +334,7 @@ export default function App() {
         <header>
           <div>
             <p className="eyebrow">
-              {new Intl.DateTimeFormat("en", {
+              {new Intl.DateTimeFormat(locale, {
                 timeZone: user.timezone,
                 weekday: "long",
                 month: "long",
@@ -294,20 +343,24 @@ export default function App() {
                 .format(new Date())
                 .toUpperCase()}
             </p>
-            <h1>{page === "Today" ? "A fresh start, every day." : page}</h1>
+            <h1>
+              {page === "Today" ? tr("A fresh start, every day.") : tr(page)}
+            </h1>
             <p className="subtitle">
               {page === "Today"
-                ? `Welcome back, ${user.username}. Let’s make today count.`
-                : "Your plans, at your own pace."}
+                ? tr("Welcome back, {name}. Let’s make today count.", {
+                    name: user.username,
+                  })
+                : tr("Your plans, at your own pace.")}
             </p>
           </div>
-          <button onClick={() => openEditor()}>＋ New task</button>
+          <button onClick={() => openEditor()}>{tr("＋ New task")}</button>
         </header>
         {error && (
           <div className="error" role="alert">
-            {error}
+            {tr(error)}
             <button className="quiet" onClick={() => setError("")}>
-              Dismiss
+              {tr("Dismiss")}
             </button>
           </div>
         )}
@@ -315,40 +368,43 @@ export default function App() {
           <>
             <section className="stats">
               <div>
-                <span>Today’s progress</span>
+                <span>{tr("Today’s progress")}</span>
                 <strong>
                   {todays.length ? Math.round((done / todays.length) * 100) : 0}
                   <em>%</em>
                 </strong>
                 <progress value={done} max={todays.length || 1} />
                 <small>
-                  {done} of {todays.length} tasks complete
+                  {tr("{done} of {total} tasks complete", {
+                    done,
+                    total: todays.length,
+                  })}
                 </small>
               </div>
               <div>
-                <span>On your list</span>
+                <span>{tr("On your list")}</span>
                 <strong>
                   {todays.length - done}
-                  <em>tasks</em>
+                  <em>{tr("tasks")}</em>
                 </strong>
-                <small>A little focus goes a long way</small>
+                <small>{tr("A little focus goes a long way")}</small>
               </div>
               <div className="streak">
-                <span>Current streak</span>
+                <span>{tr("Current streak")}</span>
                 <strong>
                   {streak}
-                  <em>days</em>
+                  <em>{tr("days")}</em>
                 </strong>
-                <small>Days with a completed task</small>
+                <small>{tr("Days with a completed task")}</small>
               </div>
             </section>
             <div className="content-grid">
               <section>
                 <div className="section-title">
                   <h2>
-                    Today’s focus <span>{todays.length}</span>
+                    {tr("Today’s focus")} <span>{todays.length}</span>
                   </h2>
-                  <span className="muted">{today}</span>
+                  <span className="muted">{formatDate(today)}</span>
                 </div>
                 {todays.length ? (
                   todays
@@ -356,14 +412,18 @@ export default function App() {
                     .map((t) => taskCard(t, today))
                 ) : (
                   <div className="empty">
-                    <h3>A little breathing room.</h3>
-                    <p>Add your first task and give today a direction.</p>
-                    <button onClick={() => openEditor()}>Create a task</button>
+                    <h3>{tr("A little breathing room.")}</h3>
+                    <p>
+                      {tr("Add your first task and give today a direction.")}
+                    </p>
+                    <button onClick={() => openEditor()}>
+                      {tr("Create a task")}
+                    </button>
                   </div>
                 )}
               </section>
               <section className="activity">
-                <h2>Recent activity</h2>
+                <h2>{tr("Recent activity")}</h2>
                 {records
                   .filter((r) => r.done)
                   .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
@@ -374,19 +434,25 @@ export default function App() {
                       <div>
                         <strong>
                           {tasks.find((t) => t.id === r.taskId)?.title ||
-                            "Task"}
+                            tr("Task")}
                         </strong>
-                        <small>Completed · {r.date}</small>
+                        <small>
+                          {tr("Completed · {date}", {
+                            date: formatDate(r.date),
+                          })}
+                        </small>
                       </div>
                     </div>
                   ))}
                 {!records.some((r) => r.done) && (
-                  <p className="muted">Your small wins will show up here.</p>
+                  <p className="muted">
+                    {tr("Your small wins will show up here.")}
+                  </p>
                 )}
                 <div className="quote">
-                  “You don’t have to do it all.
+                  {tr("“You don’t have to do it all.")}
                   <br />
-                  Just the next right thing.”
+                  {tr("Just the next right thing.”")}
                 </div>
               </section>
             </div>
@@ -408,7 +474,9 @@ export default function App() {
                     onClick={() => {
                       if (
                         confirm(
-                          "Archive this task? Completion history will be preserved.",
+                          tr(
+                            "Archive this task? Completion history will be preserved.",
+                          ),
                         )
                       )
                         action(async () => {
@@ -417,13 +485,13 @@ export default function App() {
                         });
                     }}
                   >
-                    Archive task
+                    {tr("Archive task")}
                   </button>
                 </div>
               ))}
             {!tasks.some((t) => !t.archived) && (
               <div className="empty">
-                Your task list is clear. Add a task to get started.
+                {tr("Your task list is clear. Add a task to get started.")}
               </div>
             )}
           </section>
@@ -439,25 +507,25 @@ export default function App() {
                   )
                 }
               >
-                ← Previous
+                {tr("← Previous")}
               </button>
               <h2>
-                {new Date(date + "T12:00:00Z").toLocaleDateString("en", {
+                {new Date(date + "T12:00:00Z").toLocaleDateString(locale, {
                   month: "long",
                   year: "numeric",
                   timeZone: "UTC",
                 })}
               </h2>
               <button className="quiet" onClick={() => setSelected(today)}>
-                Today
+                {tr("Today")}
               </button>
               <select
-                aria-label="Calendar view"
+                aria-label={tr("Calendar view")}
                 value={mode}
                 onChange={(e) => setMode(e.target.value)}
               >
-                <option value="month">Month</option>
-                <option value="week">Week</option>
+                <option value="month">{tr("Month")}</option>
+                <option value="week">{tr("Week")}</option>
               </select>
               <button
                 className="quiet"
@@ -467,13 +535,13 @@ export default function App() {
                   )
                 }
               >
-                Next →
+                {tr("Next →")}
               </button>
             </div>
             <div className="calendar">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
                 <div className="day-name" key={d}>
-                  {d}
+                  {tr(d)}
                 </div>
               ))}
               {Array.from({ length: mode === "month" ? 42 : 7 }, (_, i) => {
@@ -493,24 +561,30 @@ export default function App() {
                     onClick={() => setSelected(d)}
                   >
                     <strong>{Number(d.slice(-2))}</strong>
-                    <small>{list.length ? `${list.length} planned` : ""}</small>
+                    <small>
+                      {list.length
+                        ? tr("{count} planned", { count: list.length })
+                        : ""}
+                    </small>
                     {completed > 0 && <span>{completed} ✓</span>}
                   </button>
                 );
               })}
             </div>
-            <h2 className="section-title">{date} · Daily activity</h2>
+            <h2 className="section-title">
+              {tr("{date} · Daily activity", { date: formatDate(date) })}
+            </h2>
             {scheduled(date).map((t) => taskCard(t, date))}
             {tasks
               .filter((t) => t.archived && record(t, date))
               .map((t) => (
                 <p key={t.id}>
                   {record(t, date)?.done ? "✓" : "○"} {t.title}{" "}
-                  <small>(archived)</small>
+                  <small>{tr("(archived)")}</small>
                 </p>
               ))}
             {!scheduled(date).length && (
-              <p className="muted">No tasks scheduled for this date.</p>
+              <p className="muted">{tr("No tasks scheduled for this date.")}</p>
             )}
           </>
         )}
@@ -529,10 +603,10 @@ export default function App() {
                 })
               }
             >
-              Sign out
+              {tr("Sign out")}
             </button>
-            <h2>Your timezone</h2>
-            <p>Dates and daily boundaries follow your timezone.</p>
+            <h2>{tr("Your timezone")}</h2>
+            <p>{tr("Dates and daily boundaries follow your timezone.")}</p>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -546,15 +620,17 @@ export default function App() {
               }}
             >
               <label>
-                IANA timezone
+                {tr("IANA timezone")}
                 <input name="timezone" defaultValue={user.timezone} required />
               </label>
-              <button disabled={busy}>Save timezone</button>
+              <button disabled={busy}>{tr("Save timezone")}</button>
             </form>
             {user.isAdmin && (
               <>
-                <h2>Create a user</h2>
-                <p>New users have their own private tasks and history.</p>
+                <h2>{tr("Create a user")}</h2>
+                <p>
+                  {tr("New users have their own private tasks and history.")}
+                </p>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -567,12 +643,12 @@ export default function App() {
                         isAdmin: f.get("admin") === "on",
                       });
                       form.reset();
-                      alert("User created.");
+                      alert(tr("User created."));
                     });
                   }}
                 >
                   <label>
-                    Username
+                    {tr("Username")}
                     <input
                       name="username"
                       required
@@ -581,7 +657,7 @@ export default function App() {
                     />
                   </label>
                   <label>
-                    Password
+                    {tr("Password")}
                     <input
                       type="password"
                       name="password"
@@ -593,16 +669,16 @@ export default function App() {
                   </label>
                   <label className="inline">
                     <input type="checkbox" name="admin" />
-                    Administrator
+                    {tr("Administrator")}
                   </label>
-                  <button disabled={busy}>Create user</button>
+                  <button disabled={busy}>{tr("Create user")}</button>
                 </form>
               </>
             )}
           </section>
         )}
         <footer>
-          MY DAILY HUB <span>Your day. Your pace.</span>
+          MY DAILY HUB <span>{tr("Your day. Your pace.")}</span>
         </footer>
       </main>
       {editor && (
@@ -630,22 +706,22 @@ export default function App() {
             }}
           >
             <div className="section-title">
-              <h2>{editId ? "Edit task" : "A new intention"}</h2>
+              <h2>{editId ? tr("Edit task") : tr("A new intention")}</h2>
               <button
                 type="button"
                 className="quiet"
                 onClick={() => setEditor(null)}
               >
-                Close
+                {tr("Close")}
               </button>
             </div>
             {error && (
               <p role="alert" className="error">
-                {error}
+                {tr(error)}
               </p>
             )}
             <label>
-              Task title
+              {tr("Task title")}
               <input
                 required
                 maxLength={200}
@@ -657,7 +733,7 @@ export default function App() {
             </label>
             <div className="form-row">
               <label>
-                Category
+                {tr("Category")}
                 <input
                   maxLength={80}
                   value={editor.category}
@@ -667,7 +743,7 @@ export default function App() {
                 />
               </label>
               <label>
-                Priority
+                {tr("Priority")}
                 <select
                   value={editor.priority}
                   onChange={(e) =>
@@ -676,7 +752,7 @@ export default function App() {
                 >
                   {["Low", "Medium", "High"].map((p, i) => (
                     <option value={i} key={p}>
-                      {p}
+                      {tr(p)}
                     </option>
                   ))}
                 </select>
@@ -684,7 +760,7 @@ export default function App() {
             </div>
             <div className="form-row">
               <label>
-                Start date
+                {tr("Start date")}
                 <input
                   type="date"
                   required
@@ -695,7 +771,7 @@ export default function App() {
                 />
               </label>
               <label>
-                Due date / recurrence end
+                {tr("Due date / recurrence end")}
                 <input
                   type="date"
                   min={editor.startDate}
@@ -707,20 +783,22 @@ export default function App() {
               </label>
             </div>
             <label>
-              Repeat
+              {tr("Repeat")}
               <select
                 value={editor.recurrence}
                 onChange={(e) =>
                   setEditor({ ...editor, recurrence: e.target.value })
                 }
               >
-                <option value="none">Does not repeat</option>
-                <option value="daily">Every day</option>
-                <option value="weekly">Every week on start weekday</option>
+                <option value="none">{tr("Does not repeat")}</option>
+                <option value="daily">{tr("Every day")}</option>
+                <option value="weekly">
+                  {tr("Every week on start weekday")}
+                </option>
               </select>
             </label>
             <label>
-              Checklist (one item per line)
+              {tr("Checklist (one item per line)")}
               <textarea
                 value={editor.checklist}
                 onChange={(e) =>
@@ -729,7 +807,7 @@ export default function App() {
               />
             </label>
             <label>
-              Notes
+              {tr("Notes")}
               <textarea
                 maxLength={10000}
                 value={editor.notes}
@@ -738,7 +816,7 @@ export default function App() {
                 }
               />
             </label>
-            <button disabled={busy}>Save task</button>
+            <button disabled={busy}>{tr("Save task")}</button>
           </form>
         </div>
       )}

@@ -4,6 +4,8 @@ export async function api(path: string, method = "GET", body?: unknown) {
     credentials: "same-origin",
     headers: { "Content-Type": "application/json", "X-Hub-Request": "1" },
     body: body === undefined ? undefined : JSON.stringify(body),
+  }).catch(() => {
+    throw Error("Cannot connect to the server. Please try again.");
   });
   if (!r.ok) {
     let message =
