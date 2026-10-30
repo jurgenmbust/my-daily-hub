@@ -1,0 +1,30 @@
+name: my-daily-hub
+services:
+  web:
+    image: my-daily-hub-web:local
+    restart: unless-stopped
+    ports: ["192.168.100.29:8080:8080"]
+    networks: [frontend]
+    mem_limit: 64m
+    cpus: 0.5
+    read_only: true
+    tmpfs: [/tmp:size=16m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          "wget -q -O /dev/null http://127.0.0.1:8080/api/health || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+networks:
+  frontend:
+    external: true
+    name: my-daily-hub_frontend
