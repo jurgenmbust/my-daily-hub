@@ -73,6 +73,16 @@ class GateTests(unittest.TestCase):
             self.assertEqual(activate.call_count, 2)
             self.assertEqual(docker.call_args_list[-1], call('tag', 'previous', gate.IMAGE))
 
+    def test_build_base_uses_local_tag_and_verifies_approved_identity(self):
+        approved = 'sha256:' + 'a' * 64
+        with patch.object(gate, 'docker', return_value=types.SimpleNamespace(stdout=approved + '\n')) as docker:
+            self.assertEqual(gate.verified_base(approved), 'my-daily-hub-web:deploy-base')
+            docker.assert_called_once_with('image', 'inspect', '--format', '{{.Id}}', gate.BASE_IMAGE,
+                                           capture_output=True, text=True)
+        with patch.object(gate, 'docker', return_value=types.SimpleNamespace(stdout='sha256:' + 'b' * 64)):
+            with self.assertRaises(ValueError):
+                gate.verified_base(approved)
+
     def test_success_does_not_rollback(self):
         with patch.object(gate, 'docker') as docker, patch.object(gate, 'activate') as activate:
             gate.publish('candidate', 'previous')
