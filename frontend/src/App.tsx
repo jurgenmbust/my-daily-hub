@@ -371,7 +371,6 @@ export default function App() {
             });
           }}
         >
-          <div className="brand-icon">◈</div>
           <p className="eyebrow">{tr("A LITTLE SPACE FOR YOUR DAY")}</p>
           <h1>My Daily Hub</h1>
           <p>{tr("Make room for what matters.")}</p>
