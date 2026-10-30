@@ -1,9 +1,14 @@
-# Manual home-server website deployment
+# Home-server website deployment
 
-GitHub Actions → **Deploy website to home server** → **Run workflow** → select
-**main**, tick the confirmation box, and run. No push, pull request, schedule or
-merge triggers a deployment. This button is available after the workflow is merged
-to the default branch and the one-time server setup below is complete.
+Every push to **main**, including a merged pull request, automatically tests, builds
+and deploys the website. Other branches and unmerged pull requests do not deploy.
+The server runner must be online; an offline server leaves deployment queued.
+
+The manual button remains available: GitHub Actions → **Deploy website to home
+server** → **Run workflow** → select **main**, tick the confirmation box, and run.
+Confirmation is required for manual runs only. Both triggers use the same restricted
+helper, backup, health check, rollback and deployment lock. One-time server setup is
+still required; an existing configured server needs no new installation for this trigger change.
 
 ## What runs where
 
@@ -98,7 +103,7 @@ Start with the existing working application at /home/jurgen/my-daily-hub. Keep t
 
 ## First deployment and verification
 
-Run the button from main. The build runs on GitHub; deployment waits until the home
+Merge a change into main, or run the manual button from main. The build runs on GitHub; deployment waits until the home
 server is online. Avoid cancelling a deployment during container replacement.
 The server account can execute workflows, so keep repository write access limited
 to trusted people and keep this repository private. Workflow permissions alone do
@@ -114,7 +119,7 @@ backups directory. Copy them to encrypted off-server storage and manage retentio
 they are not automatically deleted. The existing owner-run backup script continues
 to work independently. Restore is an owner operation, never a workflow permission.
 
-Concurrent button runs are serialized in GitHub and the helper locks on the server.
+Automatic and manual runs are serialized in GitHub and the helper locks on the server.
 The helper also retains `my-daily-hub-web:previous` for recovery. Manual owner
 deployments must not overlap a button run. Don't prune the `deploy-base` or `previous`
 image tags. Restart the runner service after a runner upgrade if its official

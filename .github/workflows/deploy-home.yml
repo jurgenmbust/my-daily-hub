@@ -1,6 +1,8 @@
 name: Deploy website to home server
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       confirm:
@@ -22,8 +24,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Require main and explicit confirmation
-        if: ${{ github.ref != 'refs/heads/main' || !inputs.confirm }}
+      - name: Require main and confirm manual deployments
+        if: ${{ github.ref != 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && !inputs.confirm) }}
         run: |
           echo 'Choose main and tick the confirmation box.' >&2
           exit 1
