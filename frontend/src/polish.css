@@ -526,3 +526,24 @@ footer {
     transition: none;
   }
 }
+
+/* Login fills the viewport instead of inheriting the dashboard's desktop cap. */
+main.login {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.login-card > h1,
+.login-card > p:not(.error) {
+  text-align: center;
+}
+.login-card > .brand-icon {
+  display: grid;
+  margin: 0 auto 20px;
+}
+.login-card > .appearance-controls {
+  margin: 0 0 22px;
+}
+.login-card > button {
+  margin-bottom: 22px;
+}
