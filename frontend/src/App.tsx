@@ -10,6 +10,8 @@ import {
   translate,
 } from "./i18n.mjs";
 import type { Language } from "./i18n.mjs";
+import { initialTheme, savedTheme, saveTheme, applyTheme } from "./theme.mjs";
+import type { Theme } from "./theme.mjs";
 function monthOffset(date: string, offset: number) {
   const d = new Date(date.slice(0, 7) + "-01T12:00:00Z");
   d.setUTCMonth(d.getUTCMonth() + offset);
@@ -28,6 +30,13 @@ export default function App() {
     [editId, setEditId] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   const [language, setLanguage] = useState<Language>(() => initialLanguage());
+  const [theme, setTheme] = useState<Theme>(() => initialTheme());
+  useEffect(() => {
+    setTheme(
+      user ? savedTheme(user.username) || initialTheme() : initialTheme(),
+    );
+  }, [user?.username]);
+  useEffect(() => applyTheme(theme), [theme]);
   const tr = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const locale = language === "es" ? "es-CR" : "en-US";
@@ -56,6 +65,26 @@ export default function App() {
         </option>
       </select>
     </label>
+  );
+  const appearanceControls = (
+    <div className="appearance-controls">
+      {languagePicker}
+      <label className="theme-picker">
+        {tr("Theme")}
+        <select
+          value={theme}
+          onChange={(e) => {
+            const next = e.target.value as Theme;
+            setTheme(next);
+            saveTheme(next, user?.username);
+          }}
+        >
+          <option value="system">{tr("System")}</option>
+          <option value="light">{tr("Light")}</option>
+          <option value="dark">{tr("Dark")}</option>
+        </select>
+      </label>
+    </div>
   );
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
@@ -239,7 +268,7 @@ export default function App() {
             });
           }}
         >
-          {languagePicker}
+          {appearanceControls}
           <div className="brand-icon">◈</div>
           <p className="eyebrow">{tr("A LITTLE SPACE FOR YOUR DAY")}</p>
           <h1>My Daily Hub</h1>
@@ -286,7 +315,7 @@ export default function App() {
           <span className="brand-icon">◈</span> My Daily Hub
         </a>
         <p className="eyebrow">{tr("YOUR PERSONAL SPACE")}</p>
-        {languagePicker}
+        {appearanceControls}
         <nav>
           {["Today", "All tasks", "Calendar", "Settings"].map((p, i) => (
             <button
