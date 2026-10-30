@@ -371,7 +371,6 @@ export default function App() {
             });
           }}
         >
-          {appearanceControls}
           <div className="brand-icon">◈</div>
           <p className="eyebrow">{tr("A LITTLE SPACE FOR YOUR DAY")}</p>
           <h1>My Daily Hub</h1>
@@ -401,6 +400,7 @@ export default function App() {
             </p>
           )}
           <button disabled={busy}>{tr("Sign in →")}</button>
+          {appearanceControls}
           <small>{tr("Private by design. Hosted on your network.")}</small>
         </form>
       </main>
