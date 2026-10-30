@@ -3,6 +3,7 @@ import { api } from "./api";
 import type { User, Task, RecordDay, Draft } from "./types";
 import { shift, occurs, localDate } from "./schedule.mjs";
 import "./style.css";
+import "./polish.css";
 import {
   initialLanguage,
   savedLanguage,
@@ -12,6 +13,82 @@ import {
 import type { Language } from "./i18n.mjs";
 import { initialTheme, savedTheme, saveTheme, applyTheme } from "./theme.mjs";
 import type { Theme } from "./theme.mjs";
+
+function Icon({ name }: { name: string }) {
+  const paths: Record<string, React.ReactNode> = {
+    home: (
+      <>
+        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />
+      </>
+    ),
+    list: (
+      <>
+        <path d="M9 6h11M9 12h11M9 18h11M3 6l1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2" />
+      </>
+    ),
+    calendar: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="3" />
+        <path d="M7 3v4m10-4v4M3 11h18m-13 5h2m4 0h2" />
+      </>
+    ),
+    settings: (
+      <>
+        <path d="m10 3-.6 2.2-2 .9-2-.7-2 3.5 1.6 1.5v2.3L3.4 14l2 3.5 2-.7 2 .9.6 2.3h4l.6-2.3 2-.9 2 .7 2-3.5-1.6-1.3v-2.3l1.6-1.5-2-3.5-2 .7-2-.9L14 3Z" />
+        <circle cx="12" cy="11.5" r="3" />
+      </>
+    ),
+    globe: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <ellipse cx="12" cy="12" rx="4" ry="9" />
+        <path d="M3 12h18" />
+      </>
+    ),
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+      </>
+    ),
+    moon: <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />,
+    monitor: (
+      <>
+        <rect x="3" y="4" width="18" height="13" rx="2" />
+        <path d="M8 21h8m-4-4v4" />
+      </>
+    ),
+    check: <path d="m5 12 4 4L19 6" />,
+    logout: (
+      <>
+        <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4m6-12 4 4-4 4M8 12h11" />
+      </>
+    ),
+    hub: (
+      <>
+        <path d="m12 2 10 10-10 10L2 12Z" />
+        <path d="m8 12 3 3 5-6" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      className="icon"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
+
 function monthOffset(date: string, offset: number) {
   const d = new Date(date.slice(0, 7) + "-01T12:00:00Z");
   d.setUTCMonth(d.getUTCMonth() + offset);
@@ -50,40 +127,66 @@ export default function App() {
     setLanguage(next);
     saveLanguage(next, user?.username);
   }
-  const languagePicker = (
-    <label className="language-picker">
-      {tr("Language")}
-      <select
-        value={language}
-        onChange={(e) => chooseLanguage(e.target.value as Language)}
-      >
-        <option value="es" lang="es">
-          Español
-        </option>
-        <option value="en" lang="en">
-          English
-        </option>
-      </select>
-    </label>
-  );
   const appearanceControls = (
     <div className="appearance-controls">
-      {languagePicker}
-      <label className="theme-picker">
-        {tr("Theme")}
-        <select
-          value={theme}
-          onChange={(e) => {
-            const next = e.target.value as Theme;
-            setTheme(next);
-            saveTheme(next, user?.username);
-          }}
-        >
-          <option value="system">{tr("System")}</option>
-          <option value="light">{tr("Light")}</option>
-          <option value="dark">{tr("Dark")}</option>
-        </select>
-      </label>
+      <fieldset className="preference-group">
+        <legend>
+          <Icon name="globe" />
+          {tr("Language")}
+        </legend>
+        <div className="segmented language-options">
+          {(["es", "en"] as Language[]).map((value) => (
+            <label key={value} className={language === value ? "chosen" : ""}>
+              <input
+                type="radio"
+                name="language"
+                value={value}
+                checked={language === value}
+                onChange={() => chooseLanguage(value)}
+              />
+              <span lang={value}>{value === "es" ? "Español" : "English"}</span>
+              {language === value && <Icon name="check" />}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="preference-group">
+        <legend>{tr("Appearance")}</legend>
+        <div className="segmented theme-options">
+          {(["light", "dark", "system"] as Theme[]).map((value) => (
+            <label key={value} className={theme === value ? "chosen" : ""}>
+              <input
+                type="radio"
+                name="theme"
+                value={value}
+                checked={theme === value}
+                onChange={() => {
+                  setTheme(value);
+                  saveTheme(value, user?.username);
+                }}
+              />
+              <Icon
+                name={
+                  value === "light"
+                    ? "sun"
+                    : value === "dark"
+                      ? "moon"
+                      : "monitor"
+                }
+              />
+              <span>
+                {tr(
+                  value === "light"
+                    ? "Light"
+                    : value === "dark"
+                      ? "Dark"
+                      : "System",
+                )}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
     </div>
   );
   const [clock, setClock] = useState(() => new Date());
@@ -310,53 +413,74 @@ export default function App() {
       : shift(date, -((new Date(date + "T12:00:00Z").getUTCDay() + 6) % 7));
   return (
     <div className="shell">
-      <aside>
-        <a className="brand" href="#" onClick={() => setPage("Today")}>
-          <span className="brand-icon">◈</span> My Daily Hub
+      <aside aria-label={tr("Main navigation")}>
+        <a
+          className="brand"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setPage("Today");
+          }}
+        >
+          <span className="brand-icon">
+            <Icon name="hub" />
+          </span>
+          <span>
+            My Daily Hub<small>{tr("Your day. Your pace.")}</small>
+          </span>
         </a>
-        <p className="eyebrow">{tr("YOUR PERSONAL SPACE")}</p>
-        {appearanceControls}
-        <nav>
+        <p className="eyebrow nav-heading">{tr("YOUR PERSONAL SPACE")}</p>
+        <nav aria-label={tr("Pages")}>
           {["Today", "All tasks", "Calendar", "Settings"].map((p, i) => (
             <button
+              type="button"
               className={page === p ? "active" : ""}
               key={p}
+              aria-current={page === p ? "page" : undefined}
               onClick={() => setPage(p)}
             >
-              <span>{["◉", "☷", "▦", "⚙"][i]}</span>
-              {tr(p)}
+              <Icon name={["home", "list", "calendar", "settings"][i]} />
+              <span>{tr(p)}</span>
+              {page === p && <span className="nav-marker" aria-hidden="true" />}
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <span>
-            {tr("Small steps.")}
-            <br />
-            {tr("Meaningful days.")}
-          </span>
-          <p>{tr("One thing at a time is enough.")}</p>
-        </div>
-        <div className="profile">
-          <span className="avatar">{user.username[0].toUpperCase()}</span>
-          <div>
-            <strong>{user.username}</strong>
-            <small>
-              {user.isAdmin ? tr("Administrator") : tr("Personal workspace")}
-            </small>
+        <div className="sidebar-bottom">
+          {appearanceControls}
+          <div className="profile">
+            <span className="avatar" aria-hidden="true">
+              {user.username[0].toUpperCase()}
+            </span>
+            <button
+              type="button"
+              className="profile-copy"
+              aria-label={tr("Account settings")}
+              onClick={() => setPage("Settings")}
+            >
+              <strong title={user.username}>{user.username}</strong>
+              <small>
+                {user.isAdmin ? tr("Administrator") : tr("Personal workspace")}
+              </small>
+            </button>
+            <button
+              type="button"
+              className="profile-exit"
+              title={tr("Sign out")}
+              aria-label={tr("Sign out")}
+              disabled={busy}
+              onClick={() =>
+                action(async () => {
+                  await api("/auth/logout", "POST");
+                  setUser(null);
+                  setTasks([]);
+                  setRecords([]);
+                  setPage("Today");
+                })
+              }
+            >
+              <Icon name="logout" />
+            </button>
           </div>
-          <button
-            className="quiet"
-            onClick={() =>
-              action(async () => {
-                await api("/auth/logout", "POST");
-                setUser(null);
-                setTasks([]);
-                setRecords([]);
-              })
-            }
-          >
-            {tr("Exit")}
-          </button>
         </div>
       </aside>
       <main>
