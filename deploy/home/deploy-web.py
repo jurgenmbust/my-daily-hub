@@ -17,6 +17,7 @@ CONFIG = Path('/etc/my-daily-hub-deploy')
 STATE = Path('/var/lib/my-daily-hub-deploy')
 BACKUPS = Path('/var/backups/my-daily-hub')
 IMAGE = 'my-daily-hub-web:local'
+BASE_IMAGE = 'my-daily-hub-web:deploy-base'
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'HOME': '/root', 'LANG': 'C.UTF-8'}
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_FILES = 5000
@@ -73,6 +74,14 @@ def docker(*arguments, **kwargs):
                           cwd=CONFIG, timeout=600, **kwargs)
 
 
+def verified_base(expected):
+    actual = docker('image', 'inspect', '--format', '{{.Id}}', BASE_IMAGE,
+                    capture_output=True, text=True).stdout.strip()
+    if actual != expected:
+        raise ValueError('Installed base image tag does not match the approved image ID')
+    return BASE_IMAGE
+
+
 def activate():
     docker('compose', '--project-directory', str(CONFIG), '-f', str(CONFIG / 'web.yml'),
            'up', '-d', '--no-deps', '--pull', 'never', '--wait', '--wait-timeout', '90', 'web')
@@ -104,6 +113,7 @@ def main():
             base = (CONFIG / 'base-image').read_text().strip()
             if not re.fullmatch(r'sha256:[0-9a-f]{64}', base):
                 raise ValueError('Invalid installed base image')
+            base = verified_base(base)
             previous = docker('inspect', '--format', '{{.Image}}', 'my-daily-hub-web-1',
                               capture_output=True, text=True).stdout.strip()
             if not re.fullmatch(r'sha256:[0-9a-f]{64}', previous):
