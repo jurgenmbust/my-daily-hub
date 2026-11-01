@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "import_mode": "upsert",
+  "plan": {
+    "external_id": "mi-plan-fuerza",
+    "name": "Fuerza y movilidad",
+    "version": "1",
+    "language": "es",
+    "timezone": "America/Costa_Rica",
+    "start_date": null,
+    "description": "Ejemplo de formato para importar. Ajusta los ejercicios y cargas a tu propio plan.",
+    "general_rest_seconds": 90,
+    "days": [
+      {
+        "weekday": 1,
+        "title": "Fuerza A",
+        "notes": "Registra tus resultados reales al finalizar cada serie.",
+        "exercises": [
+          {
+            "id": "sentadilla",
+            "name": "Sentadilla",
+            "sets": 3,
+            "repetitions": { "min": 8, "max": 12 },
+            "duration_seconds": null,
+            "suggested_weight": { "value": null, "unit": "kg" },
+            "per_side": false,
+            "notes": null
+          },
+          {
+            "id": "plancha",
+            "name": "Plancha",
+            "sets": 2,
+            "repetitions": null,
+            "duration_seconds": { "min": 20, "max": 40 },
+            "suggested_weight": null,
+            "per_side": false,
+            "notes": "Mantén una postura cómoda y controlada."
+          }
+        ]
+      },
+      {
+        "weekday": 3,
+        "title": "Movilidad",
+        "notes": null,
+        "exercises": [
+          {
+            "id": "movilidad-cadera",
+            "name": "Movilidad de cadera",
+            "sets": 2,
+            "repetitions": { "min": 8, "max": 10 },
+            "duration_seconds": null,
+            "suggested_weight": null,
+            "per_side": true,
+            "notes": null
+          }
+        ]
+      },
+      {
+        "weekday": 5,
+        "title": "Fuerza B",
+        "exercises": [
+          {
+            "id": "remo",
+            "name": "Remo",
+            "sets": 3,
+            "repetitions": { "min": 8, "max": 12 },
+            "duration_seconds": null,
+            "suggested_weight": { "value": 5, "unit": "kg" },
+            "per_side": true,
+            "notes": null
+          }
+        ]
+      },
+      {
+        "weekday": 7,
+        "title": "Descanso",
+        "notes": "Día sin entrenamiento programado.",
+        "exercises": []
+      }
+    ]
+  }
+}

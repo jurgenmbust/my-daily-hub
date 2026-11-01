@@ -49,5 +49,6 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.MapHealthChecks("/api/health");
 app.MapHubAuth();
 app.MapHubTasks();
+app.MapHubFitness();
 app.Run();
 public partial class Program;
