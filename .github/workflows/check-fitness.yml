@@ -23,7 +23,7 @@ jobs:
           POSTGRES_PASSWORD: fitness-ci-only
         ports: ["127.0.0.1:55432:5432"]
         options: >-
-          --health-cmd 'pg_isready -U fitness_ci -d fitness_ci'
+          --health-cmd pg_isready
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
