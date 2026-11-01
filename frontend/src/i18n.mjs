@@ -1,4 +1,11 @@
 export const spanish = {
+  Fitness: "Fitness",
+  scheduled: "Programado",
+  in_progress: "En curso",
+  completed: "Completado",
+  missed: "No realizado",
+  skipped: "Omitido",
+  rest: "Descanso",
   Appearance: "Apariencia",
   "Main navigation": "Navegación principal",
   Pages: "Páginas",

@@ -1,0 +1,68 @@
+name: Check Fitness module
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "tests/**"
+      - "examples/**"
+      - "scripts/fitness-smoke.py"
+      - ".github/workflows/check-fitness.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: fitness_ci
+          POSTGRES_USER: fitness_ci
+          POSTGRES_PASSWORD: fitness-ci-only
+        ports: ["127.0.0.1:55432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Backend validation, authorization and history tests
+        run: dotnet test tests/Hub.Tests.csproj --configuration Release
+      - name: Frontend tests and production build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Check migration snapshot
+        run: |
+          dotnet tool install dotnet-ef --version 10.0.0 --tool-path "$RUNNER_TEMP/fitness-ef"
+          "$RUNNER_TEMP/fitness-ef/dotnet-ef" migrations has-pending-model-changes --project backend/Hub.csproj --configuration Release --no-build
+      - name: PostgreSQL migration and JSON import smoke test
+        env:
+          ConnectionStrings__Database: Host=127.0.0.1;Port=55432;Database=fitness_ci;Username=fitness_ci;Password=fitness-ci-only
+          Bootstrap__Username: fitness-ci
+          Bootstrap__Password: fitness-ci-test-password-only
+          ASPNETCORE_URLS: http://127.0.0.1:5087
+          KeyPath: ${{ runner.temp }}/fitness-ci-keys
+        run: |
+          dotnet run --project backend/Hub.csproj --configuration Release --no-build > "$RUNNER_TEMP/fitness-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          if ! curl --fail --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:5087/api/health; then
+            cat "$RUNNER_TEMP/fitness-api.log"
+            exit 1
+          fi
+          if ! python3 scripts/fitness-smoke.py; then
+            cat "$RUNNER_TEMP/fitness-api.log"
+            exit 1
+          fi

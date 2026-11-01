@@ -35,11 +35,15 @@ public class Completion
 }
 public class HubDb(DbContextOptions<HubDb> options) : DbContext(options)
 {
+    public DbSet<FitnessPlan> FitnessPlans => Set<FitnessPlan>();
+    public DbSet<FitnessVersion> FitnessVersions => Set<FitnessVersion>();
+    public DbSet<FitnessSession> FitnessSessions => Set<FitnessSession>();
     public DbSet<HubUser> Users => Set<HubUser>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<Completion> Completions => Set<Completion>();
     protected override void OnModelCreating(ModelBuilder b)
     {
+        FitnessCodec.Configure(b);
         b.Entity<HubUser>().HasIndex(x => x.Username).IsUnique();
         b.Entity<TaskItem>().HasIndex(x => new { x.UserId, x.StartDate });
         b.Entity<TaskItem>().HasOne<HubUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);

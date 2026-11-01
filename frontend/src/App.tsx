@@ -4,6 +4,8 @@ import type { User, Task, RecordDay, Draft } from "./types";
 import { shift, occurs, localDate } from "./schedule.mjs";
 import "./style.css";
 import "./polish.css";
+import Fitness from "./Fitness";
+import type { FitnessEvent } from "./Fitness";
 import {
   initialLanguage,
   savedLanguage,
@@ -16,6 +18,11 @@ import type { Theme } from "./theme.mjs";
 
 function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    fitness: (
+      <>
+        <path d="m5 3 4 4m6 10 4 4M3 5l4 4m10 6 4 4M7 7l10 10M2 8l6-6m8 20 6-6" />
+      </>
+    ),
     home: (
       <>
         <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />
@@ -106,6 +113,9 @@ export default function App() {
     [editor, setEditor] = useState<Draft | null>(null),
     [editId, setEditId] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
+  const [fitnessEvents, setFitnessEvents] = useState<FitnessEvent[]>([]);
+  const [fitnessFocus, setFitnessFocus] = useState<FitnessEvent | null>(null);
+  const [fitnessRefresh, setFitnessRefresh] = useState(0);
   const [language, setLanguage] = useState<Language>(() => initialLanguage());
   const [theme, setTheme] = useState<Theme>(() => initialTheme());
   useEffect(() => {
@@ -214,6 +224,19 @@ export default function App() {
   useEffect(() => {
     if (user) load().catch((e) => setError(e.message));
   }, [user, today]);
+  useEffect(() => {
+    if (!user) {
+      setFitnessEvents([]);
+      return;
+    }
+    api("/fitness/schedule?from=" + shift(date, -35) + "&to=" + shift(date, 35))
+      .then(setFitnessEvents)
+      .catch((e) => setError(e.message));
+  }, [user, date, fitnessRefresh]);
+  function openFitness(event: FitnessEvent) {
+    setFitnessFocus(event);
+    setPage("Fitness");
+  }
   async function action(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -430,19 +453,28 @@ export default function App() {
         </a>
         <p className="eyebrow nav-heading">{tr("YOUR PERSONAL SPACE")}</p>
         <nav aria-label={tr("Pages")}>
-          {["Today", "All tasks", "Calendar", "Settings"].map((p, i) => (
-            <button
-              type="button"
-              className={page === p ? "active" : ""}
-              key={p}
-              aria-current={page === p ? "page" : undefined}
-              onClick={() => setPage(p)}
-            >
-              <Icon name={["home", "list", "calendar", "settings"][i]} />
-              <span>{tr(p)}</span>
-              {page === p && <span className="nav-marker" aria-hidden="true" />}
-            </button>
-          ))}
+          {["Today", "All tasks", "Calendar", "Fitness", "Settings"].map(
+            (p, i) => (
+              <button
+                type="button"
+                className={page === p ? "active" : ""}
+                key={p}
+                aria-current={page === p ? "page" : undefined}
+                onClick={() => {
+                  setFitnessFocus(null);
+                  setPage(p);
+                }}
+              >
+                <Icon
+                  name={["home", "list", "calendar", "fitness", "settings"][i]}
+                />
+                <span>{tr(p)}</span>
+                {page === p && (
+                  <span className="nav-marker" aria-hidden="true" />
+                )}
+              </button>
+            ),
+          )}
         </nav>
         <div className="sidebar-bottom">
           {appearanceControls}
@@ -506,7 +538,9 @@ export default function App() {
                 : tr("Your plans, at your own pace.")}
             </p>
           </div>
-          <button onClick={() => openEditor()}>{tr("＋ New task")}</button>
+          {page !== "Fitness" && (
+            <button onClick={() => openEditor()}>{tr("＋ New task")}</button>
+          )}
         </header>
         {error && (
           <div className="error" role="alert">
@@ -713,6 +747,21 @@ export default function App() {
                     onClick={() => setSelected(d)}
                   >
                     <strong>{Number(d.slice(-2))}</strong>
+                    {fitnessEvents.some((e) => e.date === d) && (
+                      <span className="fitness-calendar-marker">
+                        {tr("Fitness")} ·{" "}
+                        {
+                          fitnessEvents.filter(
+                            (e) => e.date === d && e.status !== "rest",
+                          ).length
+                        }{" "}
+                        {fitnessEvents.some(
+                          (e) => e.date === d && e.status === "completed",
+                        )
+                          ? "✓"
+                          : ""}
+                      </span>
+                    )}
                     <small>
                       {list.length
                         ? tr("{count} planned", { count: list.length })
@@ -726,6 +775,19 @@ export default function App() {
             <h2 className="section-title">
               {tr("{date} · Daily activity", { date: formatDate(date) })}
             </h2>
+            <div className="fitness-calendar-events">
+              {fitnessEvents
+                .filter((e) => e.date === date)
+                .map((e) => (
+                  <button
+                    type="button"
+                    key={e.planId + e.date}
+                    onClick={() => openFitness(e)}
+                  >
+                    {tr("Fitness")} · {e.title || e.planName} · {tr(e.status)}
+                  </button>
+                ))}
+            </div>
             {scheduled(date).map((t) => taskCard(t, date))}
             {tasks
               .filter((t) => t.archived && record(t, date))
@@ -739,6 +801,14 @@ export default function App() {
               <p className="muted">{tr("No tasks scheduled for this date.")}</p>
             )}
           </>
+        )}
+        {page === "Fitness" && (
+          <Fitness
+            language={language}
+            timezone={user.timezone}
+            focus={fitnessFocus}
+            onSaved={() => setFitnessRefresh((x) => x + 1)}
+          />
         )}
         {page === "Settings" && (
           <section className="settings">

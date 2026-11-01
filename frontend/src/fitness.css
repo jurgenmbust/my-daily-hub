@@ -1,0 +1,185 @@
+.fitness-hub {
+  min-width: 0;
+}
+.fitness-toolbar,
+.fitness-actions,
+.fitness-week-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.fitness-toolbar {
+  justify-content: space-between;
+}
+.fitness-toolbar h2 {
+  margin: 0;
+}
+.fitness-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+.fitness-tabs button {
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.fitness-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 22px;
+  min-width: 0;
+}
+.fitness-panel p,
+.fitness-exercise p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fitness-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.fitness-comparison > div {
+  min-width: 0;
+}
+.fitness-day-details {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 16px;
+}
+.fitness-day-details h4 {
+  text-transform: capitalize;
+}
+.fitness-exercise {
+  background: var(--page);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.fitness-exercise dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+}
+.fitness-exercise dt {
+  color: var(--muted);
+}
+.fitness-exercise dd {
+  margin: 2px 0;
+}
+.fitness-schedule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.fitness-schedule-item > div {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.fitness-schedule-item h3,
+.fitness-schedule-item p {
+  margin: 4px 0;
+}
+.fitness-schedule-item p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.fitness-schedule-item.status-completed {
+  border-left: 4px solid var(--primary);
+}
+.fitness-schedule-item.status-missed,
+.fitness-schedule-item.status-skipped {
+  border-left: 4px solid var(--danger);
+}
+.fitness-set {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.fitness-set label {
+  margin: 0;
+  min-width: 0;
+  font-size: 11px;
+}
+.fitness-set-notes {
+  grid-column: 1 / -1;
+}
+.fitness-set input {
+  min-width: 0;
+}
+.fitness-week-navigation label {
+  margin: 0;
+}
+.fitness-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.fitness-table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.fitness-table-wrap td,
+.fitness-table-wrap th {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.fitness-notice {
+  padding: 12px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+}
+.fitness-calendar-marker {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--primary);
+  margin-top: 5px;
+}
+.fitness-calendar-events {
+  margin: 15px 0 24px;
+  display: grid;
+  gap: 8px;
+}
+.fitness-calendar-events button {
+  text-align: left;
+  background: var(--surface-active);
+  color: var(--text);
+  font-size: 12px;
+}
+@media (max-width: 680px) {
+  .fitness-panel {
+    padding: 16px;
+  }
+  .fitness-toolbar > button {
+    width: 100%;
+  }
+  .fitness-tabs button {
+    flex: 1 1 40%;
+  }
+}
